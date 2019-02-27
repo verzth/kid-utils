@@ -13,6 +13,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import java.io.IOException;
 
@@ -20,10 +21,10 @@ import java.io.IOException;
  * Created by AMP on 27-Oct-15.
  */
 public class LocationDriver implements LocationListener {
+    private static LocationDriver anInstance;
     private Context context;
-    private static LocationManager manager;
-    private static Location location;
-    private static LocationListener locationListener;
+    private LocationManager manager;
+    private Location location;
     public static final String PROVIDER_NAME = "MyLocations";
     private static final long MIN_DISTANCE = 10;
     private static final long MIN_TIME =  1000;
@@ -35,14 +36,18 @@ public class LocationDriver implements LocationListener {
         this.context = context;
         sharedPreferences = context.getSharedPreferences("MyLocations", Context.MODE_PRIVATE);
         editor = sharedPreferences.edit();
-        locationListener = this;
 
         triggerService();
     }
 
+    public static LocationDriver getInstance() {
+        return anInstance;
+    }
+
     @Override
     public void onLocationChanged(Location location) {
-        LocationDriver.location = location;
+        this.location = location;
+        Log.e("LOCATION","UPDATED");
     }
 
     @Override
@@ -60,57 +65,44 @@ public class LocationDriver implements LocationListener {
 
     }
 
-    private void triggerService(){
+    public void triggerService(){
         new Thread(new Runnable() {
             @Override
             @SuppressWarnings("MissingPermission")
             public void run() {
                 Looper.prepare();
-                LocationDriver.destroy();
                 if(LocationDriver.this.context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)) {
                     if (LocationDriver.this.context.checkCallingOrSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                         manager = (LocationManager) LocationDriver.this.context.getSystemService(Context.LOCATION_SERVICE);
-                        Location location;
                         if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                            manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME, MIN_DISTANCE, locationListener);
-                            location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                            if (location == null) {
-                                manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, locationListener);
-                                location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                            }
+                            manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
+                            LocationDriver.this.location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                         } else {
-                            manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, locationListener);
-                            location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                            manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
+                            LocationDriver.this.location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                         }
-                        if (location != null) LocationDriver.location = location;
                     }
                 }
-
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        LocationDriver.destroy();
-                    }
-                },2000);
             }
         }).start();
-    }
 
-    /**
-     * When it call, doesn't need to use init.
-     * @param context android.content.Context
-     * @return LocationDriver
-     */
-    public static LocationDriver with(Context context){
-        return new LocationDriver(context);
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                LocationDriver.this.destroy();
+            }
+        },3000);
     }
 
     @SuppressWarnings("MissingPermission")
-    public static void destroy() throws SecurityException{
-        if(manager!=null)manager.removeUpdates(locationListener);
+    public void destroy() throws SecurityException{
+        if(manager!=null){
+            manager.removeUpdates(this);
+            manager = null;
+        }
     }
     public static void init(Context context){
-        LocationDriver.with(context);
+        anInstance = new LocationDriver(context);
     }
     public Location getLocation(){
         return location;
