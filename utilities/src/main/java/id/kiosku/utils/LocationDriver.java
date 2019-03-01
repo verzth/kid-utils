@@ -47,7 +47,7 @@ public class LocationDriver implements LocationListener {
     @Override
     public void onLocationChanged(Location location) {
         this.location = location;
-        Log.e("LOCATION","UPDATED");
+        LocationDriver.this.destroy();
     }
 
     @Override
@@ -77,6 +77,10 @@ public class LocationDriver implements LocationListener {
                         if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                             manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
                             LocationDriver.this.location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                            if(LocationDriver.this.location==null){
+                                manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
+                                LocationDriver.this.location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                            }
                         } else {
                             manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
                             LocationDriver.this.location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
@@ -98,7 +102,6 @@ public class LocationDriver implements LocationListener {
     public void destroy() throws SecurityException{
         if(manager!=null){
             manager.removeUpdates(this);
-            manager = null;
         }
     }
     public static void init(Context context){
