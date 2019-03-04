@@ -76,14 +76,16 @@ public class LocationDriver implements LocationListener {
                         manager = (LocationManager) LocationDriver.this.context.getSystemService(Context.LOCATION_SERVICE);
                         if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                             manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
-                            LocationDriver.this.location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                            if(LocationDriver.this.location==null){
+                            Location location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                            if(location==null){
                                 manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
-                                LocationDriver.this.location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                            }
+                                location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                                if(location!=null) LocationDriver.this.location = location;
+                            }else LocationDriver.this.location = location;
                         } else {
                             manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
-                            LocationDriver.this.location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                            Location location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                            if(location!=null) LocationDriver.this.location = location;
                         }
                     }
                 }
