@@ -29,7 +29,7 @@ public class LocationDriver implements LocationListener {
     private static final long MIN_DISTANCE = 10;
     private static final long MIN_TIME =  1000;
     public enum AddressType{THOROUGHFARE,SUBLOCALITY,LOCALITY,POSTAL,SUBADMIN,
-        ADMIN,COUNTRY,COUNTRY_CODE}
+        ADMIN,COUNTRY,COUNTRY_CODE,ADDRESS,ADDRESS_SECOND,NAME}
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
     public LocationDriver(Context context){
@@ -219,6 +219,9 @@ public class LocationDriver implements LocationListener {
                         editor.putString("admin",loc.getAdminArea());
                         editor.putString("country",loc.getCountryName());
                         editor.putString("country_code",loc.getCountryCode());
+                        editor.putString("address",loc.getAddressLine(0));
+                        editor.putString("address_second",loc.getAddressLine(1));
+                        editor.putString("name",loc.getFeatureName());
                         editor.putLong("timeout", System.currentTimeMillis()+(5*60*1000));
                         editor.commit();
                     }
@@ -247,6 +250,15 @@ public class LocationDriver implements LocationListener {
                             break;
                         case COUNTRY_CODE:
                             result = sharedPreferences.getString("country_code","UNKNOWN");
+                            break;
+                        case ADDRESS:
+                            result = sharedPreferences.getString("address","UNKNOWN");
+                            break;
+                        case ADDRESS_SECOND:
+                            result = sharedPreferences.getString("address_second","UNKNOWN");
+                            break;
+                        case NAME:
+                            result = sharedPreferences.getString("address_second","UNKNOWN");
                             break;
                         default:
                             result = "UNKNOWN";
