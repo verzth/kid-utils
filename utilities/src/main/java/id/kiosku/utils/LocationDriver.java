@@ -32,6 +32,7 @@ public class LocationDriver implements LocationListener {
         ADMIN,COUNTRY,COUNTRY_CODE,ADDRESS,ADDRESS_SECOND,NAME}
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
+    private WatchLocation watchLocation;
     public LocationDriver(Context context){
         this.context = context;
         sharedPreferences = context.getSharedPreferences("MyLocations", Context.MODE_PRIVATE);
@@ -40,13 +41,27 @@ public class LocationDriver implements LocationListener {
         triggerService();
     }
 
+    public interface WatchLocation{
+        void onUpdate(Location location);
+    }
+
     public static LocationDriver getInstance() {
         return anInstance;
+    }
+
+    public LocationDriver watch(WatchLocation watchLocation){
+        this.watchLocation = watchLocation;
+        return this;
+    }
+    public LocationDriver unwatch(){
+        this.watchLocation = null;
+        return this;
     }
 
     @Override
     public void onLocationChanged(Location location) {
         this.location = location;
+        if(this.watchLocation!=null)this.watchLocation.onUpdate(location);
         LocationDriver.this.destroy();
     }
 
