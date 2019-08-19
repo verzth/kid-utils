@@ -13,7 +13,6 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import java.io.IOException;
 
@@ -66,19 +65,13 @@ public class LocationDriver implements LocationListener {
     }
 
     @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
+    public void onStatusChanged(String provider, int status, Bundle extras) {}
 
     @Override
-    public void onProviderEnabled(String provider) {
-
-    }
+    public void onProviderEnabled(String provider) {}
 
     @Override
-    public void onProviderDisabled(String provider) {
-
-    }
+    public void onProviderDisabled(String provider) {}
 
     public void triggerService(){
         new Thread(new Runnable() {
@@ -95,12 +88,21 @@ public class LocationDriver implements LocationListener {
                             if(location==null){
                                 manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
                                 location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                                if(location!=null) LocationDriver.this.location = location;
-                            }else LocationDriver.this.location = location;
+                                if(location!=null){
+                                    LocationDriver.this.location = location;
+                                    if(watchLocation!=null) watchLocation.onUpdate(location);
+                                }
+                            }else{
+                                LocationDriver.this.location = location;
+                                if(watchLocation!=null) watchLocation.onUpdate(location);
+                            }
                         } else {
                             manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
                             Location location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                            if(location!=null) LocationDriver.this.location = location;
+                            if(location!=null){
+                                LocationDriver.this.location = location;
+                                if(watchLocation!=null) watchLocation.onUpdate(location);
+                            }
                         }
                     }
                 }
@@ -112,7 +114,7 @@ public class LocationDriver implements LocationListener {
             public void run() {
                 LocationDriver.this.destroy();
             }
-        },3000);
+        },10000);
     }
 
     @SuppressWarnings("MissingPermission")
