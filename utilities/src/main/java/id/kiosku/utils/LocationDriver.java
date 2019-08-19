@@ -73,7 +73,10 @@ public class LocationDriver implements LocationListener {
     @Override
     public void onProviderDisabled(String provider) {}
 
+    private boolean notified = false;
+
     public void triggerService(){
+        notified = false;
         new Thread(new Runnable() {
             @Override
             @SuppressWarnings("MissingPermission")
@@ -90,18 +93,27 @@ public class LocationDriver implements LocationListener {
                                 location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                                 if(location!=null){
                                     LocationDriver.this.location = location;
-                                    if(watchLocation!=null) watchLocation.onUpdate(location);
+                                    if(watchLocation!=null && !notified){
+                                        watchLocation.onUpdate(location);
+                                        notified = true;
+                                    }
                                 }
                             }else{
                                 LocationDriver.this.location = location;
-                                if(watchLocation!=null) watchLocation.onUpdate(location);
+                                if(watchLocation!=null && !notified){
+                                    watchLocation.onUpdate(location);
+                                    notified = true;
+                                }
                             }
                         } else {
                             manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
                             Location location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                             if(location!=null){
                                 LocationDriver.this.location = location;
-                                if(watchLocation!=null) watchLocation.onUpdate(location);
+                                if(watchLocation!=null && !notified){
+                                    watchLocation.onUpdate(location);
+                                    notified = true;
+                                }
                             }
                         }
                     }
@@ -112,6 +124,10 @@ public class LocationDriver implements LocationListener {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
+                if(location!=null && watchLocation!=null && !notified){
+                    watchLocation.onUpdate(location);
+                    notified = true;
+                }
                 LocationDriver.this.destroy();
             }
         },10000);
