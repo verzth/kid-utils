@@ -25,8 +25,8 @@ public class LocationDriver implements LocationListener {
     private LocationManager manager;
     private Location location;
     public static final String PROVIDER_NAME = "MyLocations";
-    private static final long MIN_DISTANCE = 10;
-    private static final long MIN_TIME =  1000;
+    private static final long MIN_DISTANCE = 5;
+    private static final long MIN_TIME =  1;
     public enum AddressType{THOROUGHFARE,SUBLOCALITY,LOCALITY,POSTAL,SUBADMIN,
         ADMIN,COUNTRY,COUNTRY_CODE,ADDRESS,ADDRESS_SECOND,NAME}
     private SharedPreferences sharedPreferences;
@@ -73,10 +73,7 @@ public class LocationDriver implements LocationListener {
     @Override
     public void onProviderDisabled(String provider) {}
 
-    private boolean notified = false;
-
     public void triggerService(){
-        notified = false;
         new Thread(new Runnable() {
             @Override
             @SuppressWarnings("MissingPermission")
@@ -93,44 +90,38 @@ public class LocationDriver implements LocationListener {
                                 location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                                 if(location!=null){
                                     LocationDriver.this.location = location;
-                                    if(watchLocation!=null && !notified){
-                                        watchLocation.onUpdate(location);
-                                        notified = true;
-                                    }
+                                    if(watchLocation!=null) watchLocation.onUpdate(location);
                                 }
                             }else{
                                 LocationDriver.this.location = location;
-                                if(watchLocation!=null && !notified){
-                                    watchLocation.onUpdate(location);
-                                    notified = true;
-                                }
+                                if(watchLocation!=null) watchLocation.onUpdate(location);
                             }
                         } else {
                             manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME, MIN_DISTANCE, LocationDriver.this);
                             Location location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                             if(location!=null){
                                 LocationDriver.this.location = location;
-                                if(watchLocation!=null && !notified){
-                                    watchLocation.onUpdate(location);
-                                    notified = true;
-                                }
+                                if(watchLocation!=null) watchLocation.onUpdate(location);
                             }
                         }
+
+                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                            @Override
+                            @SuppressWarnings("MissingPermission")
+                            public void run() {
+                                if(location!=null && watchLocation!=null) watchLocation.onUpdate(location);
+                                else {
+                                    location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                                    if(location==null) manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                                    if(location!=null && watchLocation!=null) watchLocation.onUpdate(location);
+                                }
+                                LocationDriver.this.destroy();
+                            }
+                        },5000);
                     }
                 }
             }
         }).start();
-
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if(location!=null && watchLocation!=null && !notified){
-                    watchLocation.onUpdate(location);
-                    notified = true;
-                }
-                LocationDriver.this.destroy();
-            }
-        },10000);
     }
 
     @SuppressWarnings("MissingPermission")
