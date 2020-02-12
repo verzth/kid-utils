@@ -3,6 +3,7 @@ package id.kiosku.utils;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.Context;
+import android.os.Build;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Patterns;
@@ -38,17 +39,31 @@ public class DeviceDriver {
      * @return Random string Identity, Priority Device - Android - SIM
      */
     public String getID(){
-        String ID = manager.getDeviceId();
-        if(ID==null){
-            ID = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-            if(ID==null){
-                ID = manager.getSimSerialNumber();
+        String ID;
+        if(Build.VERSION.SDK_INT<29) {
+            ID = manager.getDeviceId();
+            if (ID != null) {
+                return ID;
             }
+        }
+        ID = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+        if(ID==null){
+            ID = manager.getSimSerialNumber();
         }
         return ID;
     }
+
+    /**
+     * In action to update of Android OS 10, we cannot get IMEI anymore, so for SDK 29++ we will forward it to getAndroidID
+     * @return String
+     */
+    @Deprecated
     public String getDeviceID(){
-        return manager.getDeviceId();
+        if(Build.VERSION.SDK_INT>=29){
+            return getAndroidID();
+        }else{
+            return manager.getDeviceId();
+        }
     }
     public String getAndroidID(){
         return Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
